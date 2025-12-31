@@ -1,18 +1,16 @@
 import { prisma } from '@/lib/db';
 import { notFound } from 'next/navigation';
 
-// Update: params is now a Promise
-export default async function View({ params }: { params: Promise<{ id: string }> }) {
-  // Await the params object
-  const { id } = await params;
+export default async function ViewPaste({ 
+  params 
+}: { 
+  params: Promise<{ id: string }> 
+}) {
+  const { id } = await params; // Await here too!
 
-  const paste = await prisma.paste.findUnique({ 
-    where: { id: id } 
-  });
+  const paste = await prisma.paste.findUnique({ where: { id } });
 
   if (!paste) notFound();
-  
-  // Expiry and View limit validation
   if (paste.expires_at && paste.expires_at <= new Date()) notFound();
   if (paste.max_views !== null && paste.current_views >= paste.max_views) notFound();
 

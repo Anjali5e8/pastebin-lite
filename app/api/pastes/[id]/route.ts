@@ -1,30 +1,37 @@
 import { prisma } from '@/lib/db';
 import { NextResponse } from 'next/server';
 
-export async function GET(req: Request, { params }: { params: { id: string } }) {
+// Change the type of params to Promise
+export async function GET(
+  req: Request, 
+  { params }: { params: Promise<{ id: string }> } 
+) {
+  // You MUST await params in Next.js 15
+  const { id } = await params;
+
   const testNowHeader = req.headers.get('x-test-now-ms');
   const now = (process.env.TEST_MODE === '1' && testNowHeader) 
     ? new Date(parseInt(testNowHeader)) 
     : new Date();
 
-  const paste = await prisma.paste.findUnique({ where: { id: params.id } });
+  const paste = await prisma.paste.findUnique({ where: { id } });
 
   if (!paste) return NextResponse.json({ error: "Not Found" }, { status: 404 });
 
   // Expiry check
   if (paste.expires_at && paste.expires_at <= now) {
-    await prisma.paste.delete({ where: { id: params.id } }).catch(() => {});
+    await prisma.paste.delete({ where: { id } }).catch(() => {});
     return NextResponse.json({ error: "Not Found" }, { status: 404 });
   }
 
   // View limit check
   if (paste.max_views !== null && paste.current_views >= paste.max_views) {
-    await prisma.paste.delete({ where: { id: params.id } }).catch(() => {});
+    await prisma.paste.delete({ where: { id } }).catch(() => {});
     return NextResponse.json({ error: "Not Found" }, { status: 404 });
   }
 
   const updated = await prisma.paste.update({
-    where: { id: params.id },
+    where: { id },
     data: { current_views: { increment: 1 } }
   });
 
