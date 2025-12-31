@@ -13,7 +13,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
 
   const paste = await prisma.paste.findUnique({ where: { id: id } });
 
-  if (!paste) return NextResponse.json({ error: "Not    Found" }, { status: 404 });
+  if (!paste) return NextResponse.json({ error: "Not Found" }, { status: 404 });
 
   // Expiry check
   if (paste.expires_at && paste.expires_at <= now) {
@@ -24,7 +24,8 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
   // View limit check
   if (paste.max_views !== null && paste.current_views >= paste.max_views) {
     await prisma.paste.delete({ where: { id: id } }).catch(() => {});
-    return NextResponse.json({ error: "Not Found" }, { status: 404 });}
+    return NextResponse.json({ error: "Not Found" }, { status: 404 });
+  }
 
   const updated = await prisma.paste.update({
     where: { id: id },
